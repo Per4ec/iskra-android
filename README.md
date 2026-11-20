@@ -21,7 +21,7 @@ app/src/main/java/com/iskra/game/
 ### Вариант 1. Android Studio (проще всего)
 
 1. Установите [Android Studio](https://developer.android.com/studio) (SDK Platform 35 ставится из неё).
-2. `File → Open…` → выберите папку проекта.
+2. `File → Open…` → выберите папку проекта (или `File → New → Project from Version Control` → вставьте URL репозитория).
 3. Дождитесь окончания Gradle Sync (снизу справа).
 4. `Build → Build APK(s)`. Готовый файл:
    `app/build/outputs/apk/debug/app-debug.apk` — его можно сразу скопировать на телефон и установить.
@@ -31,6 +31,8 @@ app/src/main/java/com/iskra/game/
 Нужны JDK 17 и Android SDK (путь к нему — в переменной `ANDROID_HOME`).
 
 ```bash
+git clone https://github.com/Per4ec/iskra-android.git
+cd iskra-android
 gradle wrapper          # один раз: создаст gradlew
 ./gradlew assembleDebug # соберёт debug APK
 # app/build/outputs/apk/debug/app-debug.apk
@@ -49,7 +51,43 @@ keytool -genkey -v -keystore iskra.keystore -alias iskra -keyalg RSA -keysize 20
 
 ### Вариант 3. GitHub Actions (ничего не устанавливая)
 
-В репозитории откройте вкладку **Actions → Build APK → Run workflow**.
+Создайте в репозитории файл `.github/workflows/build.yml` со следующим содержимым
+(кнопка **Add file → Create new file** в веб-интерфейсе GitHub):
+
+```yaml
+name: Build APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.9"
+
+      - name: Build debug APK
+        run: gradle assembleDebug
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: iskra-apk
+          path: app/build/outputs/apk/debug/app-debug.apk
+```
+
+Затем откройте вкладку **Actions → Build APK → Run workflow**.
 Через несколько минут в артефактах запуска появится `iskra-apk` с готовым файлом.
 
 ## Управление
